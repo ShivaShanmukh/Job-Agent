@@ -1,0 +1,12 @@
+Dear Hiring Manager,
+
+I am excited to apply for the {{ position }} role at {{ company }}. With my background in {{ skills }}, I am confident I would make a meaningful contribution to your team.
+
+{{ company }} stands out to me because of the impactful work you do, and I am eager to bring my experience and enthusiasm to help drive that mission forward.
+
+I have attached my resume for your review and would love the opportunity to speak further about how I can contribute to {{ company }}.
+
+Thank you for your time and consideration. I look forward to hearing from you.
+
+Warm regards,
+{{ applicant_name }}

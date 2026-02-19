@@ -1,0 +1,18 @@
+# Secrets — never commit these
+.env
+credentials.json
+token.json
+
+# Local database & logs
+job_history.db
+agent.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.venv/
+venv/

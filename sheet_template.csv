@@ -1,0 +1,4 @@
+Job_ID,Company,Position,Status,Applied_Date,Last_Checked,Application_ID,Notes,Job_URL,Priority
+001,Example Corp,Software Engineer,Not Applied,,,,,https://www.linkedin.com/jobs/view/example1,High
+002,Tech Startup,Product Manager,Not Applied,,,,,https://www.indeed.com/viewjob?jk=example2,Medium
+003,Big Company,Data Analyst,Not Applied,,,,,https://www.linkedin.com/jobs/view/example3,Low
