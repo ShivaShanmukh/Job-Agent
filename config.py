@@ -21,6 +21,16 @@ def _require(key: str) -> str:
     return value
 
 
+def _validate_range(key: str, value: int, min_val: int, max_val: int) -> int:
+    """Raise EnvironmentError if value is outside [min_val, max_val]."""
+    if not (min_val <= value <= max_val):
+        raise EnvironmentError(
+            f"Invalid value for {key}: {value}. "
+            f"Must be between {min_val} and {max_val}."
+        )
+    return value
+
+
 # ─── Google ───────────────────────────────────────────────────────────────────
 GOOGLE_SHEET_ID: str = _require("GOOGLE_SHEET_ID")
 USER_EMAIL: str = _require("USER_EMAIL")
@@ -39,14 +49,27 @@ INDEED_EMAIL: str = os.getenv("INDEED_EMAIL", "")
 INDEED_PASSWORD: str = os.getenv("INDEED_PASSWORD", "")
 
 # ─── Scheduler ────────────────────────────────────────────────────────────────
-APPLY_HOUR: int = int(os.getenv("APPLY_HOUR", "9"))
-APPLY_MINUTE: int = int(os.getenv("APPLY_MINUTE", "0"))
-STATUS_CHECK_INTERVAL_DAYS: int = int(os.getenv("STATUS_CHECK_INTERVAL_DAYS", "2"))
-STATUS_CHECK_HOUR: int = int(os.getenv("STATUS_CHECK_HOUR", "10"))
+APPLY_HOUR: int = _validate_range(
+    "APPLY_HOUR", int(os.getenv("APPLY_HOUR", "9")), 0, 23
+)
+APPLY_MINUTE: int = _validate_range(
+    "APPLY_MINUTE", int(os.getenv("APPLY_MINUTE", "0")), 0, 59
+)
+STATUS_CHECK_INTERVAL_DAYS: int = _validate_range(
+    "STATUS_CHECK_INTERVAL_DAYS", int(os.getenv("STATUS_CHECK_INTERVAL_DAYS", "2")), 1, 30
+)
+STATUS_CHECK_HOUR: int = _validate_range(
+    "STATUS_CHECK_HOUR", int(os.getenv("STATUS_CHECK_HOUR", "10")), 0, 23
+)
 
 # ─── Behaviour ────────────────────────────────────────────────────────────────
 DRY_RUN: bool = os.getenv("DRY_RUN", "false").lower() == "true"
-MAX_APPLICATIONS_PER_RUN: int = int(os.getenv("MAX_APPLICATIONS_PER_RUN", "5"))
+MAX_APPLICATIONS_PER_RUN: int = _validate_range(
+    "MAX_APPLICATIONS_PER_RUN", int(os.getenv("MAX_APPLICATIONS_PER_RUN", "5")), 1, 50
+)
+MAX_STATUS_CHECKS_PER_RUN: int = _validate_range(
+    "MAX_STATUS_CHECKS_PER_RUN", int(os.getenv("MAX_STATUS_CHECKS_PER_RUN", "20")), 1, 100
+)
 
 # ─── Derived ──────────────────────────────────────────────────────────────────
 SHEET_NAME = "Jobs"

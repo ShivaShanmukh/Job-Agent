@@ -103,8 +103,19 @@ def log_status_change(job: dict, old_status: str, new_status: str) -> None:
     )
 
 
-def get_all_applications() -> list[dict]:
-    """Return every application record."""
+def get_all_applications(limit: int = 100) -> list[dict]:
+    """
+    Return application records ordered by most recent first.
+
+    Args:
+        limit: Maximum number of records to return (default 100).
+               Pass None to fetch all records (use with care on large DBs).
+    """
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM applications ORDER BY applied_at DESC").fetchall()
+        if limit is None:
+            rows = conn.execute("SELECT * FROM applications ORDER BY applied_at DESC").fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM applications ORDER BY applied_at DESC LIMIT ?", (limit,)
+            ).fetchall()
         return [dict(r) for r in rows]

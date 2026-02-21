@@ -5,17 +5,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import sqlite3
 import pytest
-import tempfile
-import os
-
-# Point database to a temp file for testing
-import config
-_tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-config.DB_PATH = Path(_tmp.name)
-_tmp.close()
-
 import database
+import config
 
 
 SAMPLE_JOB = {
@@ -35,11 +28,9 @@ SAMPLE_RESULT = {
 
 @pytest.fixture(autouse=True)
 def fresh_db():
-    """Re-init the DB before each test."""
+    """Re-init the DB and wipe rows before each test."""
     database.init_db()
     yield
-    # Clean up rows
-    import sqlite3
     with sqlite3.connect(config.DB_PATH) as conn:
         conn.execute("DELETE FROM applications")
         conn.execute("DELETE FROM status_changes")
@@ -48,7 +39,7 @@ def fresh_db():
 
 def test_log_application():
     database.log_application(SAMPLE_JOB, SAMPLE_RESULT)
-    records = database.get_all_applications()
+    records = database.get_all_applications(limit=None)
     assert len(records) == 1
     assert records[0]["company"] == "Acme Corp"
     assert records[0]["status"] == "Applied"
@@ -66,5 +57,21 @@ def test_log_status_change():
 def test_multiple_applications():
     database.log_application(SAMPLE_JOB, SAMPLE_RESULT)
     database.log_application({**SAMPLE_JOB, "Company": "Beta Ltd"}, SAMPLE_RESULT)
-    records = database.get_all_applications()
+    records = database.get_all_applications(limit=None)
     assert len(records) == 2
+
+
+def test_get_all_applications_default_limit():
+    """Default limit of 100 should return records (up to 100)."""
+    for i in range(5):
+        database.log_application({**SAMPLE_JOB, "Job_ID": str(i)}, SAMPLE_RESULT)
+    records = database.get_all_applications()  # default limit=100
+    assert len(records) == 5
+
+
+def test_get_all_applications_respects_limit():
+    """Explicit limit should cap the number of records returned."""
+    for i in range(5):
+        database.log_application({**SAMPLE_JOB, "Job_ID": str(i)}, SAMPLE_RESULT)
+    records = database.get_all_applications(limit=3)
+    assert len(records) == 3

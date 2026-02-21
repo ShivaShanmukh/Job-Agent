@@ -135,6 +135,20 @@ The agent will:
 
 ---
 
+## Maintaining Your Sheet Over Time
+
+As you apply to more jobs, your Google Sheet will accumulate rows with terminal statuses
+(`Rejected`, `Offer Received`, `Withdrawn`). The agent reads all rows every run, so
+performance stays predictable if you periodically archive completed rows:
+
+1. Create a second sheet tab named **Archive** in the same spreadsheet.
+2. Move rows with terminal statuses there (cut → paste) once a month or so.
+3. Keep the **Jobs** tab focused on active applications (Not Applied, Applied, Under Review, Interview Scheduled).
+
+This keeps the Jobs tab lean and avoids reading stale data on every run.
+
+---
+
 ## Security Notes
 
 - ✅ Credentials stored in `.env` (local only, never shared)

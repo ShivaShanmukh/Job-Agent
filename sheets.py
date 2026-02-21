@@ -4,12 +4,10 @@ Reads job listings and writes back status updates.
 """
 
 import logging
-from pathlib import Path
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+
 import config
+import google_auth
 
 logger = logging.getLogger(__name__)
 
@@ -17,28 +15,11 @@ _service = None  # lazy-loaded
 
 
 def _get_service():
-    """Authenticate and return a Sheets API service (OAuth2, cached in token.json)."""
+    """Return a cached Sheets API service, authenticating on first call."""
     global _service
     if _service:
         return _service
-
-    creds = None
-    token_path = config.TOKEN_PATH
-
-    if token_path.exists():
-        creds = Credentials.from_authorized_user_file(str(token_path), config.GOOGLE_SCOPES)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                config.GOOGLE_CREDENTIALS_PATH, config.GOOGLE_SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-        token_path.write_text(creds.to_json())
-
-    _service = build("sheets", "v4", credentials=creds)
+    _service = build("sheets", "v4", credentials=google_auth.get_credentials())
     return _service
 
 
@@ -87,7 +68,7 @@ def read_jobs(status_filter: str | None = None) -> list[dict]:
 
 def update_job_row(row_index: int, fields: dict) -> None:
     """
-    Update specific columns in a given sheet row.
+    Update specific columns in a given sheet row in a single batch request.
 
     Args:
         row_index: The 1-based row number in the sheet (including the header row).
@@ -98,14 +79,17 @@ def update_job_row(row_index: int, fields: dict) -> None:
         return
 
     service = _get_service()
-    for col_letter, value in fields.items():
-        range_notation = f"{config.SHEET_NAME}!{col_letter}{row_index}"
-        service.spreadsheets().values().update(
-            spreadsheetId=config.GOOGLE_SHEET_ID,
-            range=range_notation,
-            valueInputOption="RAW",
-            body={"values": [[value]]},
-        ).execute()
+    data = [
+        {
+            "range": f"{config.SHEET_NAME}!{col_letter}{row_index}",
+            "values": [[value]],
+        }
+        for col_letter, value in fields.items()
+    ]
+    service.spreadsheets().values().batchUpdate(
+        spreadsheetId=config.GOOGLE_SHEET_ID,
+        body={"valueInputOption": "RAW", "data": data},
+    ).execute()
 
     logger.info("Updated row %d: %s", row_index, fields)
 

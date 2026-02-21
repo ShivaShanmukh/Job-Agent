@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 
 MOCK_SHEET_VALUES = {
@@ -22,7 +22,7 @@ MOCK_SHEET_VALUES = {
 def mock_service(monkeypatch):
     mock = MagicMock()
     mock.spreadsheets().values().get().execute.return_value = MOCK_SHEET_VALUES
-    mock.spreadsheets().values().update().execute.return_value = {}
+    mock.spreadsheets().values().batchUpdate().execute.return_value = {}
     monkeypatch.setattr("sheets._service", mock)
     return mock
 
@@ -63,4 +63,23 @@ def test_dry_run_skips_update(monkeypatch):
     mock = MagicMock()
     monkeypatch.setattr("sheets._service", mock)
     sheets.update_job_row(2, {"D": "Applied"})
-    mock.spreadsheets().values().update.assert_not_called()
+    # batchUpdate should NOT be called in dry-run mode
+    mock.spreadsheets().values().batchUpdate.assert_not_called()
+
+
+def test_batch_update_called_with_correct_fields(mock_service, monkeypatch):
+    """update_job_row() uses batchUpdate with all fields in one request."""
+    import config
+    import sheets
+    monkeypatch.setattr(config, "DRY_RUN", False)
+    # Reset call count on batchUpdate before our assertion (the fixture setup
+    # may have triggered a call when configuring mock return values)
+    mock_service.spreadsheets().values().batchUpdate.reset_mock()
+
+    sheets.update_job_row(2, {"D": "Applied", "E": "2026-02-21"})
+
+    call_args = mock_service.spreadsheets().values().batchUpdate.call_args
+    assert call_args is not None, "batchUpdate was never called"
+    body = call_args.kwargs.get("body", {})
+    assert body.get("valueInputOption") == "RAW"
+    assert len(body.get("data", [])) == 2  # 2 fields → 2 range entries in one batch
