@@ -2,5 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python start.py"
+startCommand = "python3 start.py"
 restartPolicyType = "always"
