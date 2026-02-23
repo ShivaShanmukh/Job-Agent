@@ -33,6 +33,11 @@ def _write_secret(env_var: str, filename: str) -> bool:
 def main():
     print("[start] Initialising Railway deployment …", flush=True)
 
+    # Debug: show which env vars are available (names only, not values)
+    import os
+    env_keys = [k for k in os.environ if not k.startswith("_")]
+    print(f"[start] Env vars available: {sorted(env_keys)}", flush=True)
+
     # Write Google credentials files from env vars
     _write_secret("GOOGLE_CREDENTIALS_JSON", "credentials.json")
 
